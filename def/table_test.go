@@ -8,6 +8,7 @@ import (
 )
 
 func TestParseTableFromFile(t *T) {
+
 	json := []byte(`
     {
         "name": "users",
@@ -22,7 +23,8 @@ func TestParseTableFromFile(t *T) {
 		"primary_key": "user_id",
         "queries": {
             "findById": "SELECT * FROM users WHERE user_id = ?",
-            "findManyByGroupId": "SELECT * FROM users WHERE group_id = ?"
+            "findManyByGroupId": "SELECT * FROM users WHERE group_id = ? LIMIT ? OFFSET ?",
+			"getManyUserIdsByName": "SELECT user_id FROM users WHERE name = ?"
         }
     }
 	`)
@@ -60,5 +62,30 @@ func TestParseTableFromFile(t *T) {
 
 	assert.Equal(t, "UserId", table.PrimaryKey.Name)
 	assert.Equal(t, "int64", table.PrimaryKey.Type)
+
+	assert.Equal(t, "findById", table.Queries["findById"].Name)
+	assert.False(t, table.Queries["findById"].IsMulti)
+	assert.Equal(t, 1, len(table.Queries["findById"].Params))
+	assert.Equal(t, 0, len(table.Queries["findById"].SelectFields))
+	assert.Equal(t, "UserId", table.Queries["findById"].Params[0].Name)
+	assert.Equal(t, "SELECT * FROM users WHERE user_id = ?", table.Queries["findById"].Sql)
+
+	assert.Equal(t, "findManyByGroupId", table.Queries["findManyByGroupId"].Name)
+	assert.True(t, table.Queries["findManyByGroupId"].IsMulti)
+	assert.Equal(t, 3, len(table.Queries["findManyByGroupId"].Params))
+	assert.Equal(t, 0, len(table.Queries["findById"].SelectFields))
+	assert.Equal(t, "GroupId", table.Queries["findManyByGroupId"].Params[0].Name)
+	assert.Equal(t, "Limit", table.Queries["findManyByGroupId"].Params[1].Name)
+	assert.Equal(t, "limit", table.Queries["findManyByGroupId"].Params[1].Arg)
+	assert.Equal(t, "Offset", table.Queries["findManyByGroupId"].Params[2].Name)
+	assert.Equal(t, "offset", table.Queries["findManyByGroupId"].Params[2].Arg)
+
+	//"getManyUserIdsByName: "SELECT user_id FROM users WHERE name = ?"
+	assert.Equal(t, "getManyUserIdsByName", table.Queries["getManyUserIdsByName"].Name)
+	assert.True(t, table.Queries["getManyUserIdsByName"].IsMulti)
+	assert.Equal(t, 1, len(table.Queries["getManyUserIdsByName"].Params))
+	assert.Equal(t, 1, len(table.Queries["getManyUserIdsByName"].SelectFields))
+	assert.Equal(t, "UserId", table.Queries["getManyUserIdsByName"].SelectFields[0].Name)
+	assert.Equal(t, "Name", table.Queries["getManyUserIdsByName"].Params[0].Name)
 
 }
