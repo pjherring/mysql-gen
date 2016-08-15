@@ -10,8 +10,7 @@ Given the file users.json
             "create_date": "mysql.NullTime",
             "update_date": "mysql.NullTime",
             "telephone": "string",
-            "group_id": "int64",
-            "pk": "user_id"
+            "group_id": "int64"
         },
         "queries": [
             "findById": "SELECT * FROM users WHERE user_id = ?",
@@ -35,14 +34,11 @@ in record_gen.go
         UpdateDate mysql.NullTime
         Telephone string
         GroupId int64
-    }
-
-    func (u *User) IsStored() bool {
-        return u.UserId > 0
+        IsStored bool
     }
 
     func (u *User) Scan(s gen.ScanFunc) error {
-        return s(
+        err := s(
             &u.UserId,
             &u.Name,
             &u.CreateDate,
@@ -50,6 +46,12 @@ in record_gen.go
             &u.Telephone,
             &u.GroupId,
         )
+        
+        if err != nil {
+            u.IsStored = true
+        }
+
+        return err
     }
 
 in table_gen.go
@@ -67,6 +69,11 @@ in table_gen.go
             UPDATE users SET name = ?, create_date = ?, update_date = ?, telephone = ?, group_id = ?
             WHERE user_id = ?
         `)
+
+        if err != nil {
+            u.IsStored = true
+        }
+
         return err
     }
 
@@ -80,6 +87,7 @@ in table_gen.go
         
         if err == nil {
             u.UserId = r.LastInsertId()
+            u.IsStored = true
         }
 
         return err

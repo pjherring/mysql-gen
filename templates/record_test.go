@@ -16,17 +16,14 @@ type User struct {
 	Name string
 	SignUpDate mysql.NullTime
 	UserId int64
-}
-
-func (u *User) IsStored() bool {
-	return u.UserId > 0
+	IsStored bool
 }
 
 func (u *User) Scan(s gen.ScanFunc) error {
 	return s(
-		&u.UserId,
 		&u.Name,
 		&u.SignUpDate,
+		&u.UserId,
 	)
 }`
 
@@ -59,6 +56,8 @@ func TestWriteRecord(t *testing.T) {
 		},
 	})
 
+	r := strings.NewReplacer("\t", "", "\n", "", " ", "")
+
 	assert.Nil(t, err)
-	assert.Equal(t, strings.Trim(expectedForTestWriteRecord, " "), strings.Trim(b.String(), " "))
+	assert.Equal(t, r.Replace(expectedForTestWriteRecord), r.Replace(b.String()))
 }

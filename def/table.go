@@ -9,18 +9,18 @@ import (
 )
 
 type Table struct {
-	Name       string
-	Raw        string
-	PrimaryKey Field
-	Fields     map[string]Field
-	Queries    map[string]Query
+	Name    string
+	Raw     string
+	Fields  map[string]Field
+	Queries map[string]Query
 }
 
 type Field struct {
-	Arg  string
-	Name string
-	Type string
-	Raw  string
+	Arg   string
+	Name  string
+	Type  string
+	Raw   string
+	Order int
 }
 
 type Query struct {
@@ -64,10 +64,6 @@ func ParseTable(b []byte) (Table, error) {
 		f.Name = strings.Title(f.Arg)
 
 		retval.Fields[name] = f
-
-		if name == raw.PK {
-			retval.PrimaryKey = f
-		}
 	}
 
 	for name, sql := range raw.Queries {

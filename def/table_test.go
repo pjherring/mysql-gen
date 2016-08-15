@@ -20,7 +20,6 @@ func TestParseTableFromFile(t *T) {
             "telephone": "string",
             "group_id": "int64"
         },
-		"primary_key": "user_id",
         "queries": {
             "findById": "SELECT * FROM users WHERE user_id = ?",
             "findManyByGroupId": "SELECT * FROM users WHERE group_id = ? LIMIT ? OFFSET ?",
@@ -60,9 +59,6 @@ func TestParseTableFromFile(t *T) {
 	assert.Equal(t, "GroupId", table.Fields["group_id"].Name)
 	assert.Equal(t, "int64", table.Fields["group_id"].Type)
 	assert.Equal(t, "group_id", table.Fields["group_id"].Raw)
-
-	assert.Equal(t, "UserId", table.PrimaryKey.Name)
-	assert.Equal(t, "int64", table.PrimaryKey.Type)
 
 	assert.Equal(t, "findById", table.Queries["findById"].Name)
 	assert.False(t, table.Queries["findById"].IsMulti)
