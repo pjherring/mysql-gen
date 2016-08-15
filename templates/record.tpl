@@ -1,18 +1,13 @@
-package {{.PackageName}}
-
-import(
-)
+package {{.Raw}}
 
 type {{.Name}} struct {
-    {{range .Fields}}
+{{- range .Fields}}   
     {{.Name}} {{.Type}}
-    {{end}}
+{{- end}}
 }
 
 func ({{.FirstInitial}} *{{.Name}}) Scan(s gen.ScanFunc) error {
     return s(
-        {{range .Fields}}
-        {{.FirstInitial}}.{{.Name}},
-        {{end}}
+        {{$i := .FirstInitial}}{{range .Fields}}{{$i}}.{{.Name}},{{end}}
     )
 }

@@ -10,6 +10,7 @@ import (
 
 type Table struct {
 	Name       string
+	Raw        string
 	PrimaryKey Field
 	Fields     map[string]Field
 	Queries    map[string]Query
@@ -50,6 +51,7 @@ func ParseTable(b []byte) (Table, error) {
 		return retval, err
 	}
 
+	retval.Raw = raw.Name
 	retval.Name = strings.Title(raw.Name)
 
 	for name, t := range raw.Fields {

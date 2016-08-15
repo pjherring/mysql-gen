@@ -34,6 +34,7 @@ func TestParseTableFromFile(t *T) {
 	assert.Nil(t, err)
 
 	assert.Equal(t, "Users", table.Name)
+	assert.Equal(t, "users", table.Raw)
 	assert.Equal(t, 6, len(table.Fields))
 
 	assert.Equal(t, "UserId", table.Fields["user_id"].Name)
