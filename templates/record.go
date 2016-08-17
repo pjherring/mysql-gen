@@ -3,7 +3,6 @@ package templates
 import (
 	"html/template"
 	"io"
-	"strings"
 
 	"github.com/pjherring/mysql-gen/def"
 )
@@ -16,15 +15,6 @@ func init() {
 	template.Must(recordTpl, err)
 }
 
-type recordTplDot struct {
-	def.Table
-	PackageName  string
-	FirstInitial string
-}
-
 func WriteRecord(w io.Writer, t def.Table) error {
-	return recordTpl.Execute(w, recordTplDot{
-		Table:        t,
-		FirstInitial: strings.ToLower(t.Name)[0:1],
-	})
+	return recordTpl.Execute(w, newTemplateDot(t))
 }

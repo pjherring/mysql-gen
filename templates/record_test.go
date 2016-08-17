@@ -1,8 +1,7 @@
-package templates
+package templates_test
 
 import (
 	"bytes"
-	"strings"
 	"testing"
 
 	"github.com/pjherring/mysql-gen/def"
@@ -13,51 +12,48 @@ import (
 const expectedForTestWriteRecord = `package users
 
 type User struct {
-	Name string
-	SignUpDate mysql.NullTime
 	UserId int64
+	Name string
+	CreateDate mysql.NullTime
 	IsStored bool
 }
 
 func (u *User) Scan(s gen.ScanFunc) error {
 	return s(
-		&u.Name,
-		&u.SignUpDate,
 		&u.UserId,
+		&u.Name,
+		&u.CreateDate,
 	)
+}`
+
+const recordJson = `{
+	"name": "users",
+	"fields": {
+		"user_id": "int64",
+		"name": "string",
+		"create_date": "mysql.NullTime"
+	},
+	"primary_keys": ["user_id"],
+	"queries": {
+		"findById": "SELECT * FROM users WHERE user_id = ?",
+		"findManyByGroupId": "SELECT * FROM users WHERE group_id = ? LIMIT ? OFFSET ?",
+		"getManyUserIdsByName": "SELECT user_id FROM users WHERE name = ?"
+	}
 }`
 
 func TestWriteRecord(t *testing.T) {
 
 	b := new(bytes.Buffer)
 
-	err := templates.WriteRecord(b, def.Table{
-		Raw:  "users",
-		Name: "User",
-		Fields: map[string]def.Field{
-			"user_id": def.Field{
-				Name: "UserId",
-				Raw:  "user_id",
-				Arg:  "userId",
-				Type: "int64",
-			},
-			"name": def.Field{
-				Name: "Name",
-				Raw:  "name",
-				Arg:  "name",
-				Type: "string",
-			},
-			"sign_up_date": def.Field{
-				Name: "SignUpDate",
-				Raw:  "sign_up_date",
-				Arg:  "signUpDate",
-				Type: "mysql.NullTime",
-			},
-		},
-	})
+	tableDef, err := def.ParseTable([]byte(recordJson))
+	assert.Nil(t, err)
 
-	r := strings.NewReplacer("\t", "", "\n", "", " ", "")
+	err = templates.WriteRecord(b, tableDef)
 
 	assert.Nil(t, err)
-	assert.Equal(t, r.Replace(expectedForTestWriteRecord), r.Replace(b.String()))
+	assert.Equal(
+		t,
+		templates.TemplateReplacer.Replace(expectedForTestWriteRecord),
+		templates.TemplateReplacer.Replace(b.String()),
+	)
 }
