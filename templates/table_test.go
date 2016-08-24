@@ -2,29 +2,14 @@ package templates_test
 
 import (
 	"bytes"
-	"fmt"
+	"log"
+	"strings"
 	"testing"
 
 	"github.com/pjherring/mysql-gen/def"
 	"github.com/pjherring/mysql-gen/templates"
 	"github.com/stretchr/testify/assert"
 )
-
-/*
-func (u *User) insert() error {
-	r, err := gen.GetDb().Exec(
-		"INSERT INTO users (name, create_date, update_date, telephone, group_id) VALUES (?, ?, ?, ?, ?)",
-		t.Name, t.CreateDate, t.UpdateDate, t.Telephone, t.GroupId
-	)
-
-	if err == nil {
-		t.UserId = r.LastInsertId()
-		t.IsStored = true
-	}
-
-	return err
-}
-*/
 
 const expectedTableOutput = `
 package users
@@ -39,8 +24,8 @@ func (t *User) Store() error {
 
 func (t *User) update() error {
 	_, err := gen.GetDb().Exec(
-		"UPDATE users SET name = ?, create_date = ?, update_date = ?, telephone = ?, group_id = ? WHERE user_id = ?",
-		t.Name, t.CreateDate, t.UpdateDate, t.Telephone, t.GroupId, t.UserId,
+		"UPDATE users SET create_date = ?, group_id = ?, name = ?, telephone = ?, update_date = ? WHERE user_id = ?",
+		t.CreateDate, t.GroupId, t.Name, t.Telephone, t.UpdateDate, t.UserId,
 	)
 
 	if err != nil {
@@ -49,7 +34,22 @@ func (t *User) update() error {
 
 	return err
 }
-`
+
+func (t *User) insert() error {
+	r, err := gen.GetDb().Exec(
+		"INSERT INTO users (create_date, group_id, name, telephone, update_date) VALUES (?, ?, ?, ?, ?)",
+		t.CreateDate, t.GroupId, t.Name, t.Telephone, t.UpdateDate,
+	)
+
+	if err == nil {
+		t.UserId = r.LastInsertId()
+		t.IsStored = true
+	}
+
+	return err
+}`
+
+var expectedTableOutputLines []string = strings.Split(strings.TrimSpace(expectedTableOutput), "\n")
 
 const tableJson = `{
 	"name": "users",
@@ -77,12 +77,16 @@ func TestWriteTable(t *testing.T) {
 	b := new(bytes.Buffer)
 
 	err = templates.WriteTable(b, tableDef)
-	assert.Nil(t, err)
-	assert.Equal(
-		t,
-		templates.TemplateReplacer.Replace(expectedTableOutput),
-		templates.TemplateReplacer.Replace(b.String()),
-		fmt.Sprintf("%s (expected) != %s (actual)", expectedTableOutput, b.String()),
-	)
+	if !assert.Nil(t, err) {
+		log.Fatal(err.Error())
+	}
+
+	actualLines := strings.Split(strings.TrimSpace(b.String()), "\n")
+
+	for i, p := range expectedTableOutputLines {
+		if !assert.Equal(t, strings.TrimSpace(p), strings.TrimSpace(actualLines[i])) {
+			return
+		}
+	}
 
 }
