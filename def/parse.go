@@ -2,7 +2,7 @@ package def
 
 import (
 	"encoding/json"
-	"log"
+	"sort"
 	"strings"
 
 	"github.com/pjherring/mysql-gen/util"
@@ -50,6 +50,8 @@ func ParseTable(b []byte) (Table, error) {
 		retval.fieldMap[name] = f
 	}
 
+	sort.Sort(retval.Fields)
+
 	for name, sql := range raw.Queries {
 		q := Query{
 			Name:         strings.Title(name),
@@ -75,7 +77,6 @@ func ParseTable(b []byte) (Table, error) {
 }
 
 func isMulti(sql string) bool {
-	log.Println(sql)
 	return strings.Contains(sql, "Many")
 }
 

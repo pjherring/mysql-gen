@@ -1,6 +1,7 @@
 package def_test
 
 import (
+	"sort"
 	"testing"
 
 	"github.com/pjherring/mysql-gen/def"
@@ -43,4 +44,27 @@ func TestStrings(t *testing.T) {
 	assert.Equal(t, 2, len(s))
 	assert.Equal(t, "one = ?", s[0])
 	assert.Equal(t, "two = ?", s[1])
+}
+
+func TestSort(t *testing.T) {
+	fields := def.Fields{
+		&def.Field{
+			Name: "one",
+		},
+		&def.Field{
+			Name: "ross",
+		},
+		&def.Field{
+			Name: "two",
+		},
+		&def.Field{
+			Name: "ccc",
+		},
+	}
+
+	sort.Sort(fields)
+	assert.Equal(t, "ccc", fields[0].Name)
+	assert.Equal(t, "one", fields[1].Name)
+	assert.Equal(t, "ross", fields[2].Name)
+	assert.Equal(t, "two", fields[3].Name)
 }
