@@ -3,23 +3,29 @@ package templates_test
 import (
 	"bytes"
 	"log"
-	"strings"
 	"testing"
 
 	"github.com/pjherring/mysql-gen/def"
 	"github.com/pjherring/mysql-gen/templates"
+	"github.com/pjherring/mysql-gen/util"
 	"github.com/stretchr/testify/assert"
 )
 
 const expectedTableOutput = `
 package users
 
-func (t *User) Store() error {
+func (t *User) Store() (err error) {
 	if t.IsStored {
-		return t.insert()
+		err = t.insert()
+	} else {
+		err = t.update()
+	}
+	
+	if err == nil {
+		t.IsStored = true
 	}
 
-	return t.update()
+	return
 }
 
 func (t *User) update() error {
@@ -27,10 +33,6 @@ func (t *User) update() error {
 		"UPDATE users SET create_date = ?, group_id = ?, name = ?, telephone = ?, update_date = ? WHERE user_id = ?",
 		t.CreateDate, t.GroupId, t.Name, t.Telephone, t.UpdateDate, t.UserId,
 	)
-
-	if err != nil {
-		t.IsStored = true
-	}
 
 	return err
 }
@@ -43,13 +45,46 @@ func (t *User) insert() error {
 
 	if err == nil {
 		t.UserId = r.LastInsertId()
-		t.IsStored = true
 	}
 
 	return err
-}`
+}
 
-var expectedTableOutputLines []string = strings.Split(strings.TrimSpace(expectedTableOutput), "\n")
+//finders
+func Find(userId int64) (*User, error) {
+	r := gen.GetDb().QueryRow(
+		"SELECT create_date, group_id, name, telephone, update_date, user_id FROM users WHERE user_id = ?",
+		userId,
+	)
+
+	retval := new(User)
+	if err := retval.Scan(r.Scan); err != nil {
+		return nil, err
+	}
+
+	return retval, nil
+}
+
+func FindManyByGroupId(groupId int64, limit int, offset int) ([]*User, error) {
+	r := gen.GetDb().Query(
+		"SELECT create_date, group_id, name, telephone, update_date, user_id FROM users WHERE group_id = ? LIMIT ? OFFSET ?",
+		groupId, limit, offset,
+	)
+
+	retval := make([]*User, limit)
+	defer r.Close()
+	for r.Next() {
+		m := new(User)
+		if err := m.Scan(r.Scan); err != nil {
+			return nil, err
+		}
+
+		retval = append(retval, m)
+	}
+
+	return retval, nil
+}
+`
 
 const tableJson = `{
 	"name": "users",
@@ -64,7 +99,6 @@ const tableJson = `{
 	"primary_keys": ["user_id"],
 	"auto_generated": ["user_id"],
 	"queries": {
-		"findById": "SELECT * FROM users WHERE user_id = ?",
 		"findManyByGroupId": "SELECT * FROM users WHERE group_id = ? LIMIT ? OFFSET ?",
 		"getManyUserIdsByName": "SELECT user_id FROM users WHERE name = ?"
 	}
@@ -81,12 +115,8 @@ func TestWriteTable(t *testing.T) {
 		log.Fatal(err.Error())
 	}
 
-	actualLines := strings.Split(strings.TrimSpace(b.String()), "\n")
-
-	for i, p := range expectedTableOutputLines {
-		if !assert.Equal(t, strings.TrimSpace(p), strings.TrimSpace(actualLines[i])) {
-			return
-		}
+	if !util.CompareLines(expectedTableOutput, b.String()) {
+		t.FailNow()
 	}
 
 }

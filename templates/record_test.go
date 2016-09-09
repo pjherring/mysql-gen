@@ -6,23 +6,24 @@ import (
 
 	"github.com/pjherring/mysql-gen/def"
 	"github.com/pjherring/mysql-gen/templates"
+	"github.com/pjherring/mysql-gen/util"
 	"github.com/stretchr/testify/assert"
 )
 
 const expectedForTestWriteRecord = `package users
 
 type User struct {
-	UserId int64
-	Name string
 	CreateDate mysql.NullTime
+	Name string
+	UserId int64
 	IsStored bool
 }
 
 func (u *User) Scan(s gen.ScanFunc) error {
 	return s(
-		&u.UserId,
-		&u.Name,
 		&u.CreateDate,
+		&u.Name,
+		&u.UserId,
 	)
 }`
 
@@ -51,9 +52,8 @@ func TestWriteRecord(t *testing.T) {
 	err = templates.WriteRecord(b, tableDef)
 
 	assert.Nil(t, err)
-	assert.Equal(
-		t,
-		templates.TemplateReplacer.Replace(expectedForTestWriteRecord),
-		templates.TemplateReplacer.Replace(b.String()),
-	)
+
+	if !util.CompareLines(expectedForTestWriteRecord, b.String()) {
+		t.FailNow()
+	}
 }

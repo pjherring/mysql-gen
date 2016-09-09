@@ -7,3 +7,7 @@ func UnderscoreToCamelCase(s string) string {
 	parts[1:].Each(strings.Title)
 	return strings.Join(parts, "")
 }
+
+func LowercaseFirst(s string) string {
+	return strings.ToLower(s[0:1]) + s[1:]
+}
